@@ -49,6 +49,11 @@ export async function importComponent(path, targetElement) {
       // store in cache
       componentCache[componentUrl] = html;
     }
+    const __bp = (typeof window !== "undefined" && window.__SPACE_BASE_PATH__) || "";
+    if (__bp) {
+      html = html.replace(/((?:src|href)=")(\/(?:mod|pages)\/)/g, `$1${__bp}$2`);
+      html = html.replace(/((?:src|href)=')(\/(?:mod|pages)\/)/g, `$1${__bp}$2`);
+    }
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
     applyModuleResolutionToElementAttributes(doc);

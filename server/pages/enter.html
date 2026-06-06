@@ -752,7 +752,6 @@
 
       <section class="launcher-actions" aria-label="Launcher actions" data-space-browser-compat-hide-on-fail>
         <a id="enter-space-link" class="launcher-link launcher-link-primary" href="/">Enter Space</a>
-        <a id="enter-admin-link" class="launcher-link launcher-link-secondary" href="/admin">Admin Mode</a>
         <button
           id="desktop-update-button"
           class="launcher-link launcher-link-secondary launcher-link-button"
@@ -896,7 +895,7 @@
           return;
         }
 
-      const ENTER_PAGE_PATH = "/enter";
+      const ENTER_PAGE_PATH = (window.__SPACE_BASE_PATH__ || "") + "/enter";
       const ENTER_TAB_ACCESS_KEY = "space.enter.tab-access";
       const introEnterSpaceLink = document.getElementById("enter-space-link");
       const introAdminLink = document.getElementById("enter-admin-link");
@@ -1441,10 +1440,13 @@
 
         const target = `${resolvedUrl.pathname}${resolvedUrl.search}${resolvedUrl.hash}`;
 
+        const LOGIN_PATH = (window.__SPACE_BASE_PATH__ || "") + "/login";
         if (
           !target.startsWith("/") ||
           target === "/login" ||
           target.startsWith("/login?") ||
+          target === LOGIN_PATH ||
+          target.startsWith(`${LOGIN_PATH}?`) ||
           target === ENTER_PAGE_PATH ||
           target.startsWith(`${ENTER_PAGE_PATH}?`)
         ) {

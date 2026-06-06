@@ -166,7 +166,7 @@ const model = {
 
       if (this.reauthPending) {
         window.setTimeout(() => {
-          window.location.assign("/login");
+          window.location.assign(((typeof window !== "undefined" && window.__SPACE_BASE_PATH__) || "") + "/login");
         }, PASSWORD_REDIRECT_DELAY_MS);
       }
     } catch (error) {

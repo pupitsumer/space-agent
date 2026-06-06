@@ -94,13 +94,21 @@
       }
     },
     navigateCurrent(targetUrl, mode = 'assign') {
+      const __b = window.__SPACE_BASE_PATH__ || '';
+      if (__b && typeof targetUrl === 'string' && targetUrl.startsWith('/') && targetUrl !== __b && !targetUrl.startsWith(__b + '/')) {
+        targetUrl = __b + targetUrl;
+      }
       window.location[mode](targetUrl);
     },
     navigateTop(targetUrl, mode = 'assign') {
+      const __b = window.__SPACE_BASE_PATH__ || '';
+      if (__b && typeof targetUrl === 'string' && targetUrl.startsWith('/') && targetUrl !== __b && !targetUrl.startsWith(__b + '/')) {
+        targetUrl = __b + targetUrl;
+      }
       try {
         window.top.location[mode](targetUrl);
       } catch {
-        this.navigateCurrent(targetUrl, mode);
+        window.location[mode](targetUrl);
       }
     },
     openRoute(routeHash) {

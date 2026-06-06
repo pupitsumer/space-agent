@@ -7,9 +7,22 @@ import * as _icons from "./icons.js";
 import { registerAlpineMagic } from "./confirmClick.js";
 import { HTML_EXTENSION_READY_ATTRIBUTE } from "./extensions.js";
 
+const __base = window.__SPACE_BASE_PATH__ || "";
 initializeRuntime({
-  proxyPath: "/api/proxy"
+  apiBasePath: __base + "/api",
+  proxyPath: __base + "/api/proxy"
 });
+if (__base) {
+  const __pf = window.fetch.bind(window);
+  function __np(p) { return typeof p === "string" && p.startsWith("/") && p !== __base && !p.startsWith(__base + "/"); }
+  window.fetch = function(input, init) {
+    if (typeof input === "string" && __np(input)) return __pf(__base + input, init);
+    if (input instanceof URL && input.origin === location.origin && __np(input.pathname)) {
+      const u = new URL(input); u.pathname = __base + u.pathname; return __pf(u, init);
+    }
+    return __pf(input, init);
+  };
+}
 
 // initialize required elements
 await initializer.initialize();

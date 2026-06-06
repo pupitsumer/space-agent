@@ -1,4 +1,4 @@
-const ENTER_PAGE_PATH = "/enter";
+const ENTER_PAGE_PATH = (window.__SPACE_BASE_PATH__ || "") + "/enter";
 const ENTER_TAB_ACCESS_KEY = "space.enter.tab-access";
 
 function buildCurrentPageTarget() {

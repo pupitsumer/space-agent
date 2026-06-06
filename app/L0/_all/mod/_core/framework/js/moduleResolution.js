@@ -29,9 +29,15 @@ export function getConfiguredModuleMaxLayer() {
 
 export function applyModuleResolution(value) {
   const originalValue = String(value || "");
-  const maxLayer = getConfiguredModuleMaxLayer();
 
-  if (!originalValue || maxLayer === null) {
+  if (!originalValue) {
+    return originalValue;
+  }
+
+  const maxLayer = getConfiguredModuleMaxLayer();
+  const basePath = (typeof window !== "undefined" && window.__SPACE_BASE_PATH__) || "";
+
+  if (maxLayer === null && !basePath) {
     return originalValue;
   }
 
@@ -50,10 +56,17 @@ export function applyModuleResolution(value) {
     return originalValue;
   }
 
-  resolvedUrl.searchParams.set("maxLayer", String(maxLayer));
+  if (maxLayer !== null) {
+    resolvedUrl.searchParams.set("maxLayer", String(maxLayer));
+  }
 
   if (originalValue.startsWith("/")) {
-    return `${resolvedUrl.pathname}${resolvedUrl.search}${resolvedUrl.hash}`;
+    return `${basePath}${resolvedUrl.pathname}${resolvedUrl.search}${resolvedUrl.hash}`;
+  }
+
+  if (basePath) {
+    resolvedUrl.pathname = basePath + resolvedUrl.pathname;
+    return resolvedUrl.toString();
   }
 
   return resolvedUrl.toString();

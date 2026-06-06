@@ -331,11 +331,13 @@ function clearLoginBootstrapState(identity = {}) {
 }
 
 function redirectToLogoutOnMissing() {
-  if (globalThis.location?.pathname === "/logout") {
+  const __b = (typeof window !== "undefined" && window.__SPACE_BASE_PATH__) || "";
+  const logoutPath = __b + "/logout";
+  if (globalThis.location?.pathname === logoutPath || globalThis.location?.pathname === "/logout") {
     return;
   }
 
-  globalThis.location?.assign?.("/logout");
+  globalThis.location?.assign?.(logoutPath);
 }
 
 export async function storeUnlockedUserCryptoSession({

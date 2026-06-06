@@ -1868,7 +1868,7 @@
 
           setStatus("Signed in. Redirecting...", "ok");
           grantEnterTabAccess();
-          window.location.replace("/");
+          window.location.replace((window.__SPACE_BASE_PATH__ || "") + "/");
         } catch (error) {
           logLoginError("Sign-in failed", error, {
             username: usernameInput.value.trim()

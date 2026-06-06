@@ -1,5 +1,11 @@
 # Text params accept exact values, glob patterns using * and ?, or /regex/ entries.
 # Number params accept exact numeric values and inclusive ranges such as 1024..65535.
+BASE_PATH:
+  description: URL path prefix when Space Agent is served under a subpath (e.g. /space_agent). Leave empty for root deployment.
+  type: text
+  allowed: ["*"]
+  default: ""
+  frontend_exposed: true
 HOST:
   description: Hostname or interface address the local server binds to.
   type: text

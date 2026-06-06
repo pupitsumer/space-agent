@@ -395,6 +395,14 @@ function serializeRuntimeParams(runtimeParams) {
   }));
 }
 
+function getBasePath(runtimeParams) {
+  const raw = String(
+    (runtimeParams && typeof runtimeParams.get === "function" && runtimeParams.get("BASE_PATH")) || ""
+  ).trim();
+  if (!raw || raw === "/") return "";
+  return raw.startsWith("/") ? raw.replace(/\/+$/u, "") : `/${raw.replace(/\/+$/u, "")}`;
+}
+
 function isSingleUserApp(runtimeParams) {
   return Boolean(runtimeParams && typeof runtimeParams.get === "function" && runtimeParams.get("SINGLE_USER_APP"));
 }
@@ -437,6 +445,7 @@ export {
   createRuntimeParams,
   findParamSpec,
   formatAllowedValues,
+  getBasePath,
   getStoredParamValue,
   hydrateRuntimeParams,
   isCloudShareAllowed,

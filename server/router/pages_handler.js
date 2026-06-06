@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { areGuestUsersAllowed, isSingleUserApp } from "../lib/utils/runtime_params.js";
+import { areGuestUsersAllowed, getBasePath, isSingleUserApp } from "../lib/utils/runtime_params.js";
 import { runTrackedMutation } from "../runtime/request_mutations.js";
 import { createNoStoreHeaders, sendFile, sendJson, sendNotFound, sendRedirect } from "./responses.js";
 
@@ -32,6 +32,74 @@ const ENTER_GUARD_PLACEHOLDER = "<!-- SPACE_SINGLE_USER_ENTER_GUARD -->";
 const ENTER_GUARD_SCRIPT_TAG = '    <script src="/pages/res/enter-guard.js"></script>';
 const PROJECT_VERSION_PLACEHOLDER = "<!-- SPACE_PROJECT_VERSION -->";
 const SHARE_SPACE_ROUTE_PATTERN = /^\/share\/space\/([A-Za-z0-9]{8})$/u;
+
+function buildBasePathPolyfill(basePath) {
+  return `<script>
+(function(){
+  var BASE="${basePath}";
+  window.__SPACE_BASE_PATH__=BASE;
+  var _fetch=window.fetch.bind(window);
+  function needsPrefix(p){return typeof p==="string"&&p.startsWith("/")&&p!==BASE&&!p.startsWith(BASE+"/");}
+  window.fetch=function(input,init){
+    if(typeof input==="string"&&needsPrefix(input)){return _fetch(BASE+input,init);}
+    if(input instanceof URL&&input.origin===window.location.origin&&needsPrefix(input.pathname)){
+      var u=new URL(input.href);u.pathname=BASE+input.pathname;return _fetch(u,init);
+    }
+    return _fetch(input,init);
+  };
+  function fixUrl(url){
+    if(typeof url!=="string")return null;
+    try{var u=new URL(url);if(u.origin===location.origin&&needsPrefix(u.pathname))return BASE+u.pathname+u.search+u.hash;}
+    catch(e){if(needsPrefix(url))return BASE+url;}
+    return null;
+  }
+  function fixDomNode(n){
+    if(!n||n.nodeType!==1)return;
+    var t=n.tagName.toLowerCase();
+    try{
+      if((t==="link"||t==="a")&&n.href){var f=fixUrl(n.href);if(f)n.href=f;}
+      if((t==="script"||t==="img"||t==="video"||t==="source")&&n.src){var f=fixUrl(n.src);if(f)n.src=f;}
+    }catch(e){}
+    var ch=n.children;for(var i=0;i<ch.length;i++)fixDomNode(ch[i]);
+  }
+  var _ac=Node.prototype.appendChild;
+  Node.prototype.appendChild=function(c){fixDomNode(c);return _ac.call(this,c);};
+  var _ib=Node.prototype.insertBefore;
+  Node.prototype.insertBefore=function(c,r){fixDomNode(c);return _ib.call(this,c,r);};
+  var _sa=Element.prototype.setAttribute;
+  Element.prototype.setAttribute=function(name,val){
+    if((name==="href"||name==="src")&&typeof val==="string"){var f=fixUrl(val);if(f)val=f;}
+    return _sa.call(this,name,val);
+  };
+  var _replace=Location.prototype.replace;
+  Location.prototype.replace=function(url){
+    if(needsPrefix(url))url=BASE+url;
+    return _replace.call(this,url);
+  };
+  var _assign=Location.prototype.assign;
+  Location.prototype.assign=function(url){
+    if(needsPrefix(url))url=BASE+url;
+    return _assign.call(this,url);
+  };
+})();
+</script>
+<script type="importmap">{"imports":{"/pages/res/":"${basePath}/pages/res/","/mod/":"${basePath}/mod/"}}</script>`;
+}
+
+function injectBasePath(sourceText, basePath) {
+  if (!basePath) return sourceText;
+  const polyfill = buildBasePathPolyfill(basePath);
+  let result = sourceText
+    .replace(/(<head[^>]*>)/iu, `$1\n${polyfill}`)
+    .replace(/((?:href|src|action)=")\/(?!\/)/gu, `$1${basePath}/`)
+    .replace(/((?:href|src|action)=')\/(?!\/)/gu, `$1${basePath}/`);
+  return result;
+}
+
+function prefixRedirect(path, basePath) {
+  if (!basePath || path.startsWith(basePath)) return path;
+  return `${basePath}${path}`;
+}
 
 function createSessionCleanupHeaders(requestContext, auth) {
   if (
@@ -139,16 +207,20 @@ async function sendPageHtml(res, filePath, options = {}) {
     return;
   }
 
-  const body = injectFrontendConfigMetaTags(
-    injectProjectVersion(
-      injectEnterGuard(sourceText, {
-        pageName: options.pageName,
-        requestContext: options.requestContext,
-        runtimeParams: options.runtimeParams
-      }),
-      options.projectVersion
+  const basePath = getBasePath(options.runtimeParams);
+  const body = injectBasePath(
+    injectFrontendConfigMetaTags(
+      injectProjectVersion(
+        injectEnterGuard(sourceText, {
+          pageName: options.pageName,
+          requestContext: options.requestContext,
+          runtimeParams: options.runtimeParams
+        }),
+        options.projectVersion
+      ),
+      options.runtimeParams
     ),
-    options.runtimeParams
+    basePath
   );
 
   res.writeHead(200, createNoStoreHeaders({
@@ -160,7 +232,7 @@ async function sendPageHtml(res, filePath, options = {}) {
 }
 
 async function handleLogoutRequest(res, options = {}) {
-  const { auth, requestContext } = options;
+  const { auth, requestContext, runtimeParams } = options;
 
   try {
     if (
@@ -179,7 +251,7 @@ async function handleLogoutRequest(res, options = {}) {
     return;
   }
 
-  sendRedirect(res, "/login", createClearedSessionHeaders(auth));
+  sendRedirect(res, prefixRedirect("/login", getBasePath(runtimeParams)), createClearedSessionHeaders(auth));
 }
 
 function resolvePathWithinRoot(rootDir, requestPath) {
@@ -287,6 +359,7 @@ function resolveRootPageResourceRequest(pagesDir, pathname) {
 
 async function handlePageRequest(res, requestUrl, options = {}) {
   const { auth, pagesDir, requestContext, runtimeParams } = options;
+  const basePath = getBasePath(runtimeParams);
 
   if (requestUrl.pathname === LOGOUT_ROUTE) {
     await handleLogoutRequest(res, options);
@@ -345,26 +418,33 @@ async function handlePageRequest(res, requestUrl, options = {}) {
   }
 
   if (pageRequest.kind === "redirect") {
-    sendRedirect(res, pageRequest.location, createSessionCleanupHeaders(requestContext, auth));
+    sendRedirect(res, prefixRedirect(pageRequest.location, basePath), createSessionCleanupHeaders(requestContext, auth));
     return;
   }
 
   const isLoginPage = pageRequest.pageName === "login.html";
   const isEnterPage = pageRequest.pageName === "enter.html";
+  const isAdminPage = pageRequest.pageName === "admin.html";
   const canAccessEnterPage = hasEnterLauncherAccess(requestContext, runtimeParams);
 
+  if (isAdminPage) {
+    const fallback = requestContext?.user?.isAuthenticated ? "/" : "/login";
+    sendRedirect(res, prefixRedirect(fallback, basePath), createSessionCleanupHeaders(requestContext, auth));
+    return;
+  }
+
   if (isEnterPage && !canAccessEnterPage) {
-    sendRedirect(res, "/login", createSessionCleanupHeaders(requestContext, auth));
+    sendRedirect(res, prefixRedirect("/login", basePath), createSessionCleanupHeaders(requestContext, auth));
     return;
   }
 
   if (isLoginPage && requestContext?.user?.isAuthenticated) {
-    sendRedirect(res, "/", createSessionCleanupHeaders(requestContext, auth));
+    sendRedirect(res, prefixRedirect("/", basePath), createSessionCleanupHeaders(requestContext, auth));
     return;
   }
 
   if (!isLoginPage && !isEnterPage && !requestContext?.user?.isAuthenticated) {
-    sendRedirect(res, "/login", createSessionCleanupHeaders(requestContext, auth));
+    sendRedirect(res, prefixRedirect("/login", basePath), createSessionCleanupHeaders(requestContext, auth));
     return;
   }
 
