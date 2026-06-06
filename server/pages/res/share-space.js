@@ -620,7 +620,7 @@ async function openSharedSpace(token) {
     }
   });
   setStatus("Opening shared space...", "ok");
-  window.location.replace(String(cloneResult.redirectUrl || "/"));
+  window.location.replace(String(cloneResult.redirectUrl || (window.__SPACE_BASE_PATH__ || "") + "/"));
 }
 
 async function init() {

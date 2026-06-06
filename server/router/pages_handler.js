@@ -386,7 +386,7 @@ async function handlePageRequest(res, requestUrl, options = {}) {
 
   if (sharePageRequest) {
     if (sharePageRequest.kind === "redirect") {
-      sendRedirect(res, sharePageRequest.location, createSessionCleanupHeaders(requestContext, auth));
+      sendRedirect(res, prefixRedirect(sharePageRequest.location, basePath), createSessionCleanupHeaders(requestContext, auth));
       return;
     }
 

@@ -1,5 +1,5 @@
 import { cloneHostedCloudShareToGuest } from "../lib/share/service.js";
-import { areGuestUsersAllowed } from "../lib/utils/runtime_params.js";
+import { areGuestUsersAllowed, getBasePath } from "../lib/utils/runtime_params.js";
 import { runTrackedMutation } from "../runtime/request_mutations.js";
 
 export const allowAnonymous = true;
@@ -31,7 +31,7 @@ export async function post(context) {
     status: 200,
     body: {
       password: cloneResult.password,
-      redirectUrl: "/#/spaces?id=" + encodeURIComponent(cloneResult.importedSpace.spaceId),
+      redirectUrl: getBasePath(context.runtimeParams) + "/#/spaces?id=" + encodeURIComponent(cloneResult.importedSpace.spaceId),
       spaceId: cloneResult.importedSpace.spaceId,
       username: cloneResult.username
     }
