@@ -1457,7 +1457,9 @@
       }
 
       function isAdminTarget(target) {
-        return typeof target === "string" && /^\/admin(?:[?#]|$)/u.test(target);
+        const __b = window.__SPACE_BASE_PATH__ || "";
+        const adminPattern = __b ? new RegExp(`^(?:${__b})?/admin(?:[?#]|$)`) : /^\/admin(?:[?#]|$)/u;
+        return typeof target === "string" && adminPattern.test(target);
       }
 
       function buildAdminTarget(nextTarget) {
@@ -1465,7 +1467,8 @@
           return nextTarget;
         }
 
-        const adminUrl = new URL("/admin", window.location.origin);
+        const __b = window.__SPACE_BASE_PATH__ || "";
+        const adminUrl = new URL(__b + "/admin", window.location.origin);
         adminUrl.searchParams.set("url", nextTarget || "/");
         return `${adminUrl.pathname}${adminUrl.search}${adminUrl.hash}`;
       }

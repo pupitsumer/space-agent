@@ -88,7 +88,9 @@
       }
 
       try {
-        return window.top.location.pathname === '/admin';
+        const __b = window.__SPACE_BASE_PATH__ || '';
+        const adminPath = __b + '/admin';
+        return window.top.location.pathname === adminPath || window.top.location.pathname === '/admin';
       } catch {
         return false;
       }

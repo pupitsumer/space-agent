@@ -1,7 +1,7 @@
 export const LOGIN_HOOKS_STATE_PATH = "~/meta/login_hooks.json";
 export const FIRST_LOGIN_EXTENSION_POINT = "_core/login_hooks/first_login";
 export const ANY_LOGIN_EXTENSION_POINT = "_core/login_hooks/any_login";
-export const LOGIN_PAGE_PATHNAME = "/login";
+export const LOGIN_PAGE_PATHNAME = ((typeof window !== "undefined" && window.__SPACE_BASE_PATH__) || "") + "/login";
 
 async function callConfiguredLoginExtensions(...args) {
   const { callJsExtensions } = await import("../framework/js/extensions.js");

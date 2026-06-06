@@ -110,7 +110,7 @@ function resolveRequestMaxLayer(options = {}) {
     return refererQueryMaxLayer;
   }
 
-  if (refererUrl.pathname === "/admin" || refererUrl.pathname === "/admin.html") {
+  if (/\/admin(?:\.html)?$/.test(refererUrl.pathname)) {
     return 0;
   }
 

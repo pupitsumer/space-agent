@@ -1,6 +1,6 @@
 const HORIZONTAL_LAYOUT = "horizontal";
 const VERTICAL_LAYOUT = "vertical";
-const DEFAULT_MAIN_FRAME_URL = "/index.html";
+const DEFAULT_MAIN_FRAME_URL = ((typeof window !== "undefined" && window.__SPACE_BASE_PATH__) || "") + "/index.html";
 
 function resolveRequestedMainFrameUrl(locationObject = globalThis.window?.location) {
   if (!locationObject) {

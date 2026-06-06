@@ -5,8 +5,9 @@
   role="menuitem"
   @click="
     (() => {
-      const currentUrl = window.location.pathname + window.location.search + window.location.hash || '/index.html';
-      const adminUrl = new URL('/admin', window.location.href);
+      const __b = window.__SPACE_BASE_PATH__ || '';
+      const currentUrl = window.location.pathname + window.location.search + window.location.hash || (__b + '/index.html') || '/index.html';
+      const adminUrl = new URL(__b + '/admin', window.location.href);
       adminUrl.searchParams.set('url', currentUrl);
       isOpen = false;
       try {

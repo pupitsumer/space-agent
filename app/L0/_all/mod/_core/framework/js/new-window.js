@@ -9,6 +9,11 @@ const CURRENT_TAB_TARGETS = new Set(["", "_self", "_top", "_parent"]);
 const GUARDED_PAGE_PATHS = new Set(["/", "/admin"]);
 const HTTP_NAVIGATION_PROTOCOLS = new Set(["http:", "https:"]);
 
+function resolveGuardedPagePaths() {
+  const base = (typeof window !== "undefined" && window.__SPACE_BASE_PATH__) || "";
+  return base ? new Set([base + "/", base + "/admin"]) : GUARDED_PAGE_PATHS;
+}
+
 function hasCurrentTabAccess() {
   try {
     return window.sessionStorage.getItem(ENTER_TAB_ACCESS_KEY) === "1";
@@ -54,7 +59,7 @@ function isGuardedLocalUrl(targetUrl) {
   return Boolean(
     targetUrl
       && targetUrl.origin === window.location.origin
-      && GUARDED_PAGE_PATHS.has(targetUrl.pathname)
+      && resolveGuardedPagePaths().has(targetUrl.pathname)
   );
 }
 
