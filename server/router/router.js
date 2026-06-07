@@ -14,6 +14,7 @@ import { handleModuleRequest } from "./mod_handler.js";
 import { handleAppFetchRequest } from "./app_fetch_handler.js";
 import { readParsedRequestBody } from "./request_body.js";
 import { resolveProjectVersion } from "../lib/utils/project_version.js";
+import { isCcuiPath, isCcuiPublic, proxyCcuiRequest } from "../lib/ccui_proxy.js";
 import {
   STATE_VERSION_HEADER,
   normalizeStateVersionHeaderValue
@@ -323,6 +324,12 @@ function createRequestHandler(options) {
     });
 
     return runWithRequestContext(requestContext, async () => {
+      if (isCcuiPath(requestUrl.pathname)) {
+        if (!isCcuiPublic(requestUrl.pathname) && !ensureAuthenticatedOrRespond(res, requestContext, auth)) return;
+        await proxyCcuiRequest(req, res);
+        return;
+      }
+
       if (requestUrl.pathname.startsWith("/api/") && handleApiPreflight(req, res)) {
         return;
       }

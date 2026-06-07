@@ -18,6 +18,7 @@ import { createWatchdog } from "./lib/file_watch/watchdog.js";
 import { createTmpWatch, ensureServerTmpDir } from "./lib/tmp/tmp_watch.js";
 import { loadProjectEnvFiles } from "./lib/utils/env_files.js";
 import { createRuntimeParams } from "./lib/utils/runtime_params.js";
+import { setupCcuiWsProxy } from "./lib/ccui_proxy.js";
 import { JobRunner } from "./jobs/job_runner.js";
 import { createLocalMutationSync } from "./runtime/request_mutations.js";
 import { sendJson } from "./router/responses.js";
@@ -235,6 +236,8 @@ async function createAgentServer(overrides = {}) {
       });
     });
   });
+
+  setupCcuiWsProxy(server);
 
   const runtime = {
     apiDir,
